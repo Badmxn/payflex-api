@@ -1,21 +1,18 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-
-// Temporary in-memory store (we'll replace with database in Phase 3)
-const users: { id: string; name: string; email: string; password: string; role: string }[] = []
+import prisma from '../prisma'
 
 export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password, role } = req.body
 
-    // Validate fields
     if (!name || !email || !password || !role) {
       return res.status(400).json({ success: false, message: 'All fields are required' })
     }
 
-    // Check if user exists
-    const existing = users.find(u => u.email === email)
+    // Check if user exists in database
+    const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) {
       return res.status(400).json({ success: false, message: 'Email already registered' })
     }
@@ -23,15 +20,10 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashed = await bcrypt.hash(password, 10)
 
-    // Create user
-    const user = {
-      id: Date.now().toString(),
-      name,
-      email,
-      password: hashed,
-      role
-    }
-    users.push(user)
+    // Save user to database
+    const user = await prisma.user.create({
+      data: { name, email, password: hashed, role }
+    })
 
     // Generate token
     const token = jwt.sign(
@@ -55,8 +47,8 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body
 
-    // Find user
-    const user = users.find(u => u.email === email)
+    // Find user in database
+    const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid email or password' })
     }
