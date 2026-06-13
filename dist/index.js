@@ -11,14 +11,12 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const sanitize_1 = require("./middleware/sanitize");
 const auth_1 = __importDefault(require("./routes/auth"));
 const transactions_1 = __importDefault(require("./routes/transactions"));
+const paystack_1 = __importDefault(require("./routes/paystack"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
-// Trust Render's proxy
 app.set('trust proxy', 1);
-// Security headers
 app.use((0, helmet_1.default)());
-// Rate limiting
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -37,15 +35,12 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 app.use(express_1.default.json({ limit: '10kb' }));
-// Prevent HTTP parameter pollution
 app.use((0, sanitize_1.hpp)());
-// Sanitize all inputs
 app.use(sanitize_1.sanitizeInput);
-// Global rate limit
 app.use(limiter);
-// Routes
 app.use('/api/auth', authLimiter, auth_1.default);
 app.use('/api/transactions', transactions_1.default);
+app.use('/api/paystack', paystack_1.default);
 app.get('/', (req, res) => {
     res.json({ message: 'PayFlex API is running', version: '1.0.0' });
 });

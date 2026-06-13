@@ -6,19 +6,16 @@ import rateLimit from 'express-rate-limit'
 import { sanitizeInput, hpp } from './middleware/sanitize'
 import authRoutes from './routes/auth'
 import transactionRoutes from './routes/transactions'
+import paystackRoutes from './routes/paystack'
 
 dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Trust Render's proxy
 app.set('trust proxy', 1)
-
-// Security headers
 app.use(helmet())
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -40,19 +37,13 @@ app.use(cors({
 }))
 
 app.use(express.json({ limit: '10kb' }))
-
-// Prevent HTTP parameter pollution
 app.use(hpp())
-
-// Sanitize all inputs
 app.use(sanitizeInput)
-
-// Global rate limit
 app.use(limiter)
 
-// Routes
 app.use('/api/auth', authLimiter, authRoutes)
 app.use('/api/transactions', transactionRoutes)
+app.use('/api/paystack', paystackRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'PayFlex API is running', version: '1.0.0' })

@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const paystackController_1 = require("../controllers/paystackController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.post('/initialize', auth_1.protect, paystackController_1.initializePayment);
+router.get('/verify/:reference', auth_1.protect, paystackController_1.verifyPayment);
+router.post('/webhook', paystackController_1.paystackWebhook);
+exports.default = router;
