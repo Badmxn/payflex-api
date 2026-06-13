@@ -1,31 +1,43 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { z } from 'zod'
 import prisma from '../prisma'
+
+const registerSchema = z.object({
+  name:     z.string().min(2, 'Name must be at least 2 characters'),
+  email:    z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  role:     z.enum(['buyer', 'seller'])
+})
+
+const loginSchema = z.object({
+  email:    z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required')
+})
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role } = req.body
-
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ success: false, message: 'All fields are required' })
+    const result = registerSchema.safeParse(req.body)
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error.issues[0].message
+      })
     }
 
-    // Check if user exists in database
+    const { name, email, password, role } = result.data
+
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) {
       return res.status(400).json({ success: false, message: 'Email already registered' })
     }
 
-    // Hash password
     const hashed = await bcrypt.hash(password, 10)
-
-    // Save user to database
     const user = await prisma.user.create({
       data: { name, email, password: hashed, role }
     })
 
-    // Generate token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET as string,
@@ -45,21 +57,26 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body
+    const result = loginSchema.safeParse(req.body)
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error.issues[0].message
+      })
+    }
 
-    // Find user in database
+    const { email, password } = result.data
+
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid email or password' })
     }
 
-    // Check password
     const match = await bcrypt.compare(password, user.password)
     if (!match) {
       return res.status(400).json({ success: false, message: 'Invalid email or password' })
     }
 
-    // Generate token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET as string,
