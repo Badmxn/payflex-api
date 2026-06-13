@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
 import prisma from '../prisma'
+import { encrypt, decrypt } from '../utils/encryption'
 
 const transactionSchema = z.object({
   recipient: z.string().min(2, 'Recipient name is required'),
@@ -26,16 +27,32 @@ export const createTransaction = async (req: Request, res: Response) => {
     const userId = (req as any).user.id
     const fee = calcFee(amount)
 
+    // Encrypt sensitive fields before saving
     const transaction = await prisma.transaction.create({
-      data: { recipient, email, amount, fee, type, note, userId, status: 'pending' }
+      data: {
+        recipient: encrypt(recipient),
+        email: encrypt(email),
+        amount,
+        fee,
+        type,
+        note,
+        userId,
+        status: 'pending'
+      }
     })
 
+    // Decrypt before returning to client
     res.status(201).json({
       success: true,
       message: 'Transaction created',
-      transaction
+      transaction: {
+        ...transaction,
+        recipient: decrypt(transaction.recipient),
+        email: decrypt(transaction.email)
+      }
     })
   } catch (error) {
+    console.error('TRANSACTION ERROR:', error)
     res.status(500).json({ success: false, message: 'Server error' })
   }
 }
@@ -49,7 +66,14 @@ export const getTransactions = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     })
 
-    res.json({ success: true, transactions })
+    // Decrypt all transactions before returning
+    const decrypted = transactions.map(tx => ({
+      ...tx,
+      recipient: (() => { try { return decrypt(tx.recipient) } catch { return tx.recipient } })(),
+      email: (() => { try { return decrypt(tx.email) } catch { return tx.email } })()
+    }))
+
+    res.json({ success: true, transactions: decrypted })
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' })
   }
