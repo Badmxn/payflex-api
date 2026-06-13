@@ -1,20 +1,12 @@
-import { Request, Response, NextFunction } from 'express'
-import jwt from 'jsonwebtoken'
+import { Router } from 'express'
+import { register, login, refresh, logout } from '../controllers/authController'
+import { auditLog } from '../middleware/audit'
 
-export const protect = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization
+const router = Router()
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Not authorized' })
-  }
+router.post('/register', auditLog('USER_REGISTER'), register)
+router.post('/login', auditLog('USER_LOGIN'), login)
+router.post('/refresh', refresh)
+router.post('/logout', auditLog('USER_LOGOUT'), logout)
 
-  const token = authHeader.split(' ')[1]
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string)
-    ;(req as any).user = decoded
-    next()
-  } catch {
-    res.status(401).json({ success: false, message: 'Invalid token' })
-  }
-}
+export default router

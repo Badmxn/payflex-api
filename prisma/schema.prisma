@@ -16,6 +16,7 @@ model User {
   createdAt     DateTime       @default(now())
   transactions  Transaction[]
   refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
 }
 
 model Transaction {
@@ -38,5 +39,16 @@ model RefreshToken {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  ip        String?
+  userAgent String?
   createdAt DateTime @default(now())
 }
