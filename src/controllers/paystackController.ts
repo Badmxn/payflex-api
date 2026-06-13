@@ -71,37 +71,34 @@ export const initializePayment = async (req: Request, res: Response) => {
 
 // Verify a payment
 export const verifyPayment = async (req: Request, res: Response) => {
-  try {
-    const { reference } = req.params
-
-    const response = await paystackRequest('GET', `/transaction/verify/${reference}`)
-
-    if (!response.status || response.data.status !== 'success') {
-      return res.status(400).json({ success: false, message: 'Payment verification failed' })
-    }
-
-    const { transactionId } = response.data.metadata
-
-    // Update transaction status in database
-    const transaction = await prisma.transaction.update({
-      where: { id: transactionId },
-      data: { status: 'success' }
-    })
-
-    res.json({
-      success: true,
-      message: 'Payment verified successfully',
-      transaction: {
-        ...transaction,
-        recipient: (() => { try { return decrypt(transaction.recipient) } catch { return transaction.recipient } })(),
-        email: (() => { try { return decrypt(transaction.email) } catch { return transaction.email } })()
+    try {
+      const { reference } = req.params
+  
+      const response = await paystackRequest('GET', `/transaction/verify/${reference}`)
+  
+      if (!response.status) {
+        return res.status(400).json({ success: false, message: 'Payment verification failed' })
       }
-    })
-  } catch (error) {
-    console.error('PAYSTACK VERIFY ERROR:', error)
-    res.status(500).json({ success: false, message: 'Payment verification failed' })
+  
+      const paymentData = response.data
+  
+      res.json({
+        success: true,
+        message: 'Payment verified successfully',
+        payment: {
+          reference: paymentData.reference,
+          amount: paymentData.amount / 100,
+          status: paymentData.status,
+          email: paymentData.customer.email,
+          paidAt: paymentData.paid_at,
+          channel: paymentData.channel
+        }
+      })
+    } catch (error) {
+      console.error('PAYSTACK VERIFY ERROR:', error)
+      res.status(500).json({ success: false, message: 'Payment verification failed' })
+    }
   }
-}
 
 // Paystack webhook
 export const paystackWebhook = async (req: Request, res: Response) => {

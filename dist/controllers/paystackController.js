@@ -39,7 +39,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.paystackWebhook = exports.verifyPayment = exports.initializePayment = void 0;
 const https_1 = __importDefault(require("https"));
 const prisma_1 = __importDefault(require("../prisma"));
-const encryption_1 = require("../utils/encryption");
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const paystackRequest = (method, path, data) => {
     return new Promise((resolve, reject) => {
@@ -104,32 +103,20 @@ const verifyPayment = async (req, res) => {
     try {
         const { reference } = req.params;
         const response = await paystackRequest('GET', `/transaction/verify/${reference}`);
-        if (!response.status || response.data.status !== 'success') {
+        if (!response.status) {
             return res.status(400).json({ success: false, message: 'Payment verification failed' });
         }
-        const { transactionId } = response.data.metadata;
-        // Update transaction status in database
-        const transaction = await prisma_1.default.transaction.update({
-            where: { id: transactionId },
-            data: { status: 'success' }
-        });
+        const paymentData = response.data;
         res.json({
             success: true,
             message: 'Payment verified successfully',
-            transaction: {
-                ...transaction,
-                recipient: (() => { try {
-                    return (0, encryption_1.decrypt)(transaction.recipient);
-                }
-                catch {
-                    return transaction.recipient;
-                } })(),
-                email: (() => { try {
-                    return (0, encryption_1.decrypt)(transaction.email);
-                }
-                catch {
-                    return transaction.email;
-                } })()
+            payment: {
+                reference: paymentData.reference,
+                amount: paymentData.amount / 100,
+                status: paymentData.status,
+                email: paymentData.customer.email,
+                paidAt: paymentData.paid_at,
+                channel: paymentData.channel
             }
         });
     }
