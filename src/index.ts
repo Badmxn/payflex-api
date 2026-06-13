@@ -7,6 +7,7 @@ import { sanitizeInput, hpp } from './middleware/sanitize'
 import authRoutes from './routes/auth'
 import transactionRoutes from './routes/transactions'
 import paystackRoutes from './routes/paystack'
+import statsRoutes from './routes/stats'
 
 dotenv.config()
 
@@ -44,6 +45,7 @@ app.use(limiter)
 app.use('/api/auth', authLimiter, authRoutes)
 app.use('/api/transactions', transactionRoutes)
 app.use('/api/paystack', paystackRoutes)
+app.use('/api/stats', statsRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'PayFlex API is running', version: '1.0.0' })
