@@ -11,17 +11,19 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Trust Render's proxy
+app.set('trust proxy', 1)
+
 // Security headers
 app.use(helmet())
 
-// Rate limiting — max 100 requests per 15 minutes per IP
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { success: false, message: 'Too many requests, please try again later' }
 })
 
-// Stricter limit for auth routes — max 10 attempts per 15 minutes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -32,7 +34,6 @@ app.use(cors())
 app.use(express.json())
 app.use(limiter)
 
-// Routes
 app.use('/api/auth', authLimiter, authRoutes)
 app.use('/api/transactions', transactionRoutes)
 
