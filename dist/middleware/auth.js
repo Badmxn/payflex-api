@@ -1,11 +1,23 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const authController_1 = require("../controllers/authController");
-const audit_1 = require("../middleware/audit");
-const router = (0, express_1.Router)();
-router.post('/register', (0, audit_1.auditLog)('USER_REGISTER'), authController_1.register);
-router.post('/login', (0, audit_1.auditLog)('USER_LOGIN'), authController_1.login);
-router.post('/refresh', authController_1.refresh);
-router.post('/logout', (0, audit_1.auditLog)('USER_LOGOUT'), authController_1.logout);
-exports.default = router;
+exports.protect = void 0;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const protect = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    }
+    catch {
+        res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+};
+exports.protect = protect;
