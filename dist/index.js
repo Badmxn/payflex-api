@@ -13,6 +13,7 @@ const auth_1 = __importDefault(require("./routes/auth"));
 const transactions_1 = __importDefault(require("./routes/transactions"));
 const paystack_1 = __importDefault(require("./routes/paystack"));
 const stats_1 = __importDefault(require("./routes/stats"));
+const kyc_1 = __importDefault(require("./routes/kyc"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
@@ -43,6 +44,7 @@ app.use('/api/auth', authLimiter, auth_1.default);
 app.use('/api/transactions', transactions_1.default);
 app.use('/api/paystack', paystack_1.default);
 app.use('/api/stats', stats_1.default);
+app.use('/api/kyc', kyc_1.default);
 app.get('/', (req, res) => {
     res.json({ message: 'PayFlex API is running', version: '1.0.0' });
 });

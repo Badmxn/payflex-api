@@ -17,6 +17,14 @@ model User {
   transactions  Transaction[]
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
+
+  kycStatus      String    @default("unverified")
+  dateOfBirth    String?
+  address        String?
+  idType         String?
+  idNumber       String?
+  kycSubmittedAt DateTime?
+  kycVerifiedAt  DateTime?
 }
 
 model Transaction {

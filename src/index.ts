@@ -8,6 +8,7 @@ import authRoutes from './routes/auth'
 import transactionRoutes from './routes/transactions'
 import paystackRoutes from './routes/paystack'
 import statsRoutes from './routes/stats'
+import kycRoutes from './routes/kyc'
 
 dotenv.config()
 
@@ -46,6 +47,7 @@ app.use('/api/auth', authLimiter, authRoutes)
 app.use('/api/transactions', transactionRoutes)
 app.use('/api/paystack', paystackRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/kyc', kycRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'PayFlex API is running', version: '1.0.0' })
