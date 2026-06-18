@@ -50,7 +50,7 @@ app.use('/api/stats', statsRoutes)
 app.use('/api/kyc', kycRoutes)
 
 app.get('/', (req, res) => {
-  res.json({ message: 'PayFlex API is running', version: '1.0.0' })
+  res.json({ message: 'Rova API is running', version: '1.0.0' })
 })
 
 app.listen(Number(PORT), '0.0.0.0', () => {
