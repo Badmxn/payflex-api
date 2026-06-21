@@ -31,6 +31,7 @@ const getCryptoPrices = async (req, res) => {
         }
         const url = `https://api.coingecko.com/api/v3/simple/price?ids=${COINS}&vs_currencies=usd,ngn&include_24hr_change=true`;
         const data = await fetchJson(url);
+        console.log('COINGECKO RESPONSE:', JSON.stringify(data));
         const formatted = [
             { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', usd: data.bitcoin?.usd, ngn: data.bitcoin?.ngn, change24h: data.bitcoin?.usd_24h_change },
             { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', usd: data.ethereum?.usd, ngn: data.ethereum?.ngn, change24h: data.ethereum?.usd_24h_change },
